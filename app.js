@@ -9,6 +9,7 @@ var apiV1Routes = require('./routes/api_v1');
 var handleErrors = require('./lib/handle_errors');
 var solr = require('solr-client');
 var Bluebird = require('bluebird');
+var RequestHandler = require('./lib/request_handler');
 
 class App {
 	constructor(requestHandler) {
@@ -16,6 +17,7 @@ class App {
 	}
 
 	*run() {
+
 		this.app = koa();
 		this.app.use(bodyParser());
 		this.app.use(handleErrors);
@@ -30,13 +32,14 @@ class App {
 
 co(function*() {
 
-
 	var solrConnectionSettings = global.conf.solr_client.connection_settings;
 	var solrClient = solr.createClient(solrConnectionSettings);
 	solrClient = Bluebird.promisifyAll(solrClient);
-	var app = new App();
+	var requestHandler = new RequestHandler(solrClient);
+	var app = new App(requestHandler);
 
 	yield app.run();
+
 }).catch(function(err) {
 	log.error(err);
 	process.abort();
